@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Intelligent Energy Analytics</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #07111f;
+    color: #e5edf7;
+}
+
+header {
+    padding: 24px 32px;
+    background: #0b1728;
+    border-bottom: 1px solid #1e3148;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 27px;
+}
+
+header p {
+    margin: 7px 0 0;
+    color: #8da2ba;
+}
+
+.live {
+    background: #0d2d24;
+    color: #5ee6a8;
+    padding: 9px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.container {
+    max-width: 1450px;
+    margin: auto;
+    padding: 25px;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.card, .panel {
+    background: #0d1b2d;
+    border: 1px solid #1c3048;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.18);
+}
+
+.card-title {
+    color: #91a4bb;
+    font-size: 14px;
+}
+
+.value {
+    font-size: 29px;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.sub {
+    color: #6f859e;
+    font-size: 12px;
+    margin-top: 7px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.panel h2 {
+    margin-top: 0;
+    font-size: 18px;
+}
+
+.chart-box {
+    height: 320px;
+}
+
+.intelligence-row {
+    padding: 11px 0;
+    border-bottom: 1px solid #1a2c40;
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.intelligence-row:last-child {
+    border-bottom: none;
+}
+
+.label {
+    color: #8da2ba;
+}
+
+.good {
+    color: #5ee6a8;
+    font-weight: bold;
+}
+
+.warning {
+    color: #ffcc66;
+    font-weight: bold;
+}
+
+.danger {
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+.ml-badge {
+    display: inline-block;
+    background: #142d50;
+    color: #72b7ff;
+    padding: 5px 9px;
+    border-radius: 7px;
+    font-size: 12px;
+}
+
+.table-panel {
+    margin-top: 16px;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 850px;
+}
+
+th {
+    text-align: left;
+    color: #8196ad;
+    font-size: 12px;
+    padding: 12px;
+    border-bottom: 1px solid #24384f;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #172a3e;
+    font-size: 13px;
+}
+
+.statusbar {
+    margin-top: 16px;
+    color: #71869e;
+    font-size: 12px;
+    text-align: right;
+}
+
+@media(max-width: 950px) {
+    .cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media(max-width: 550px) {
+    .cards {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        <h1>⚡ Intelligent Energy Analytics</h1>
+        <p>Energy Monitoring • Anomaly Detection • ML Forecasting</p>
+    </div>
+
+    <div id="liveBadge" class="live">● API ONLINE</div>
+</header>
+
+<div class="container">
+
+    <div class="cards">
+
+        <div class="card">
+            <div class="card-title">AVERAGE VOLTAGE</div>
+            <div class="value" id="voltage">-- V</div>
+            <div class="sub">Electrical supply monitoring</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">AVERAGE CURRENT</div>
+            <div class="value" id="current">-- A</div>
+            <div class="sub">Load current</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">ACTIVE POWER</div>
+            <div class="value" id="power">-- W</div>
+            <div class="sub">Average power demand</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">POWER FACTOR</div>
+            <div class="value" id="pf">--</div>
+            <div class="sub">Power quality indicator</div>
+        </div>
+
+    </div>
+
+
+    <div class="grid">
+
+        <div class="panel">
+            <h2>Power History</h2>
+            <div class="chart-box">
+                <canvas id="powerChart"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+
+            <h2>System Intelligence</h2>
+
+            <div class="intelligence-row">
+                <span class="label">System</span>
+                <span id="systemStatus" class="good">ONLINE</span>
+            </div>
+
+            <div class="intelligence-row">
+                <span class="label">Measurements</span>
+                <strong id="measurementCount">0</strong>
+            </div>
+
+            <div class="intelligence-row">
+                <span class="label">Rule Anomalies</span>
+                <strong id="ruleAnomalies">0</strong>
+            </div>
+
+            <div class="intelligence-row">
+                <span class="label">ML Engine</span>
+                <span id="mlStatus" class="ml-badge">Checking...</span>
+            </div>
+
+            <div class="intelligence-row">
+                <span class="label">ML Anomalies</span>
+                <strong id="mlAnomalies">--</strong>
+            </div>
+
+            <div class="intelligence-row">
+                <span class="label">ML Model</span>
+                <strong id="mlModel">Isolation Forest</strong>
+            </div>
+
+            <div class="intelligence-row">
+                <span class="label">Baseline Forecast</span>
+                <strong id="baselineForecast">-- W</strong>
+            </div>
+
+            <div class="intelligence-row">
+                <span class="label">ML Forecast</span>
+                <strong id="mlForecast">-- W</strong>
+            </div>
+
+            <div class="intelligence-row">
+                <span class="label">Forecast Model</span>
+                <strong id="forecastModel">Linear Regression</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="panel table-panel">
+
+        <h2>Recent Energy Measurements</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Timestamp</th>
+                    <th>Voltage (V)</th>
+                    <th>Current (A)</th>
+                    <th>Active Power (W)</th>
+                    <th>Reactive Power (VAR)</th>
+                    <th>Power Factor</th>
+                    <th>Frequency (Hz)</th>
+                </tr>
+            </thead>
+
+            <tbody id="measurementTable">
+                <tr>
+                    <td colspan="8">Waiting for measurements...</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+
+    <div class="statusbar" id="lastUpdate">
+        Connecting to analytics API...
+    </div>
+
+</div>
+
+
+<script>
+
+const API = "http://127.0.0.1:8001";
+
+let powerChart = null;
+
+
+function normalizeMeasurement(item) {
+    if (item.data) {
+        return {
+            id: item.id,
+            ...item.data
+        };
+    }
+
+    return item;
+}
+
+
+function displayNumber(value, digits = 2) {
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+        return "--";
+    }
+
+    return number.toFixed(digits);
+}
+
+
+async function getJSON(endpoint) {
+
+    const response = await fetch(API + endpoint);
+
+    if (!response.ok) {
+        throw new Error(endpoint + " returned " + response.status);
+    }
+
+    return await response.json();
+}
+
+
+function createPowerChart(measurements) {
+
+    const recent = measurements.slice(-20);
+
+    const labels = recent.map((m, index) => {
+        if (m.timestamp) {
+            const date = new Date(m.timestamp);
+
+            if (!isNaN(date)) {
+                return date.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                });
+            }
+        }
+
+        return "#" + (m.id ?? index + 1);
+    });
+
+    const values = recent.map(m =>
+        Number(m.active_power) || 0
+    );
+
+    const ctx = document.getElementById("powerChart");
+
+    if (powerChart) {
+        powerChart.destroy();
+    }
+
+    powerChart = new Chart(ctx, {
+
+        type: "line",
+
+        data: {
+            labels: labels,
+
+            datasets: [{
+                label: "Active Power (W)",
+                data: values,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+
+        options: {
+
+            responsive: true,
+            maintainAspectRatio: false,
+
+            interaction: {
+                intersect: false,
+                mode: "index"
+            },
+
+            plugins: {
+                legend: {
+                    labels: {
+                        color: "#cbd5e1"
+                    }
+                }
+            },
+
+            scales: {
+
+                x: {
+                    ticks: {
+                        color: "#71869e"
+                    },
+
+                    grid: {
+                        color: "rgba(255,255,255,.04)"
+                    }
+                },
+
+                y: {
+                    beginAtZero: true,
+
+                    ticks: {
+                        color: "#71869e"
+                    },
+
+                    grid: {
+                        color: "rgba(255,255,255,.05)"
+                    },
+
+                    title: {
+                        display: true,
+                        text: "Active Power (W)",
+                        color: "#8da2ba"
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+function createTable(measurements) {
+
+    const table =
+        document.getElementById("measurementTable");
+
+    if (!measurements.length) {
+
+        table.innerHTML =
+            '<tr><td colspan="8">No measurements available.</td></tr>';
+
+        return;
+    }
+
+    const recent =
+        [...measurements].reverse().slice(0, 10);
+
+    table.innerHTML = recent.map(m => `
+
+        <tr>
+            <td>${m.id ?? "--"}</td>
+            <td>${m.timestamp ?? "--"}</td>
+            <td>${displayNumber(m.voltage)}</td>
+            <td>${displayNumber(m.current)}</td>
+            <td>${displayNumber(m.active_power)}</td>
+            <td>${displayNumber(m.reactive_power)}</td>
+            <td>${displayNumber(m.power_factor, 3)}</td>
+            <td>${displayNumber(m.frequency)}</td>
+        </tr>
+
+    `).join("");
+}
+
+
+async function loadDashboard() {
+
+    try {
+
+        const [
+            health,
+            stats,
+            anomalyData,
+            baseline,
+            measurementData,
+            mlData,
+            mlForecastData
+        ] = await Promise.all([
+
+            getJSON("/health"),
+            getJSON("/analytics/statistics"),
+            getJSON("/analytics/anomalies"),
+            getJSON("/analytics/forecast"),
+            getJSON("/measurements"),
+            getJSON("/ml/anomalies"),
+            getJSON("/ml/forecast")
+
+        ]);
+
+
+        document.getElementById("voltage").innerText =
+            displayNumber(stats.average_voltage) + " V";
+
+        document.getElementById("current").innerText =
+            displayNumber(stats.average_current) + " A";
+
+        document.getElementById("power").innerText =
+            displayNumber(stats.average_active_power) + " W";
+
+        document.getElementById("pf").innerText =
+            displayNumber(stats.average_power_factor, 3);
+
+
+        document.getElementById("measurementCount").innerText =
+            measurementData.count ?? 0;
+
+        document.getElementById("ruleAnomalies").innerText =
+            anomalyData.anomalies_detected ?? 0;
+
+
+        document.getElementById("baselineForecast").innerText =
+            displayNumber(
+                baseline.forecast_active_power
+            ) + " W";
+
+
+        document.getElementById("mlModel").innerText =
+            mlData.model || "Isolation Forest";
+
+        document.getElementById("mlAnomalies").innerText =
+            mlData.anomalies_detected ?? 0;
+
+
+        const mlStatus =
+            document.getElementById("mlStatus");
+
+        if (mlData.status === "READY") {
+
+            mlStatus.innerText = "READY";
+            mlStatus.className = "good";
+
+        } else {
+
+            mlStatus.innerText =
+                mlData.status || "WAITING FOR DATA";
+
+            mlStatus.className = "warning";
+        }
+
+
+        document.getElementById("forecastModel").innerText =
+            mlForecastData.model || "Linear Regression";
+
+
+        if (
+            mlForecastData.forecast_active_power !== null &&
+            mlForecastData.forecast_active_power !== undefined
+        ) {
+
+            document.getElementById("mlForecast").innerText =
+                displayNumber(
+                    mlForecastData.forecast_active_power
+                ) + " W";
+
+        } else {
+
+            document.getElementById("mlForecast").innerText =
+                "Waiting for data";
+        }
+
+
+        const measurements =
+            (measurementData.measurements || [])
+            .map(normalizeMeasurement);
+
+
+        createPowerChart(measurements);
+
+        createTable(measurements);
+
+
+        document.getElementById("liveBadge").innerText =
+            "● API ONLINE";
+
+        document.getElementById("liveBadge").className =
+            "live";
+
+
+        document.getElementById("systemStatus").innerText =
+            "ONLINE";
+
+        document.getElementById("systemStatus").className =
+            "good";
+
+
+        document.getElementById("lastUpdate").innerText =
+            "Last updated: " +
+            new Date().toLocaleTimeString();
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        document.getElementById("liveBadge").innerText =
+            "● API OFFLINE";
+
+        document.getElementById("liveBadge").style.color =
+            "#ff6b6b";
+
+        document.getElementById("systemStatus").innerText =
+            "CONNECTION ERROR";
+
+        document.getElementById("systemStatus").className =
+            "danger";
+
+        document.getElementById("lastUpdate").innerText =
+            "API connection failed — " + error.message;
+    }
+}
+
+
+loadDashboard();
+
+setInterval(loadDashboard, 10000);
+
+</script>
+
+</body>
+</html>
